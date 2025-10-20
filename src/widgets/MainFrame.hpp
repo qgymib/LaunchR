@@ -12,14 +12,11 @@ public:
     explicit MainFrame(wxWindow* parent);
     ~MainFrame() override;
 
-private:
-    void OnHello(wxCommandEvent& event);
-
-    void OnExit(wxCommandEvent& event);
-
-    void OnAbout(wxCommandEvent& event);
+public:
+    struct Data;
+    struct Data* m_data;
 };
 
-}
+} // namespace LR
 
 #endif
