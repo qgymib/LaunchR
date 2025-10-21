@@ -17,8 +17,10 @@ function(setup_target_wall name)
 endfunction()
 
 add_executable(${PROJECT_NAME} WIN32
+        src/utils/Settings.cpp
         src/widgets/MainFrame.cpp
-        src/main.cpp
+        src/widgets/SettingsDialog.cpp
+        src/LaunchR.cpp
         src/resource.rc
 )
 target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>)
@@ -28,9 +30,14 @@ setup_target_wall(${PROJECT_NAME})
 # Dependency
 ###############################################################################
 
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+set(JSON_Install OFF CACHE INTERNAL "")
+add_subdirectory(third_party/json)
+target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
+
 set(wxBUILD_SHARED OFF)
 add_subdirectory(third_party/wxWidgets)
-target_link_libraries(${PROJECT_NAME} PUBLIC wx::net wx::core wx::base)
+target_link_libraries(${PROJECT_NAME} PRIVATE wx::net wx::core wx::base)
 
 ###############################################################################
 # Setup static link
