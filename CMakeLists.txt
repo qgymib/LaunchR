@@ -17,6 +17,8 @@ function(setup_target_wall name)
 endfunction()
 
 add_executable(${PROJECT_NAME} WIN32
+        src/searchers/PortableApps.cpp
+        src/searchers/Searcher.cpp
         src/utils/FileLogger.cpp
         src/utils/Settings.cpp
         src/widgets/MainFrame.cpp

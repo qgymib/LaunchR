@@ -12,7 +12,8 @@ struct SettingLog
 
 struct Settings
 {
-    SettingLog log; /* Log configuration. */
+    SettingLog log;                       /* Log configuration. */
+    bool       PortableAppSupport = true; /* Enable PortableApps.com format support. */
 };
 
 class SettingsManager

@@ -10,6 +10,7 @@ bool LaunchRApp::OnInit()
 {
     settings = new LR::SettingsManager();
     logger = new LR::FileLogger();
+    searcher = new LR::PortableAppSearcher();
 
     auto frame = new LR::MainFrame(nullptr);
     frame->SetIcon(wxIcon("IDI_ICON1"));
@@ -20,18 +21,26 @@ bool LaunchRApp::OnInit()
 
 int LaunchRApp::OnExit()
 {
+    delete searcher;
     delete logger;
     delete settings;
     return 0;
 }
 
-wxString LaunchRApp::GenDataPath(const char* name)
+wxString LaunchRApp::GetWorkingDir()
 {
-    const wxUniChar sep = wxFileName::GetPathSeparator();
-    const wxString  exePath = wxStandardPaths::Get().GetExecutablePath();
+    const wxString exePath = wxStandardPaths::Get().GetExecutablePath();
 
     wxString dataDir;
     wxFileName::SplitPath(exePath, &dataDir, nullptr, nullptr, wxPATH_NATIVE);
+
+    return dataDir;
+}
+
+wxString LaunchRApp::GenDataPath(const char* name)
+{
+    const wxUniChar sep = wxFileName::GetPathSeparator();
+    const wxString  dataDir = GetWorkingDir();
 
     wxString ret = dataDir + sep + ".LaunchR";
     if (name != nullptr)

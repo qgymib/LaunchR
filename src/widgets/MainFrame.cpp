@@ -1,10 +1,12 @@
-#include "MainFrame.hpp"
+#include <wx/wx.h>
 #include <wx/listctrl.h>
 #include <wx/srchctrl.h>
 #include <algorithm>
 #include <vector>
+#include "LaunchR.hpp"
+#include "MainFrame.hpp"
 
-using LR::MainFrame;
+using namespace LR;
 
 // Data model
 struct Item
@@ -26,8 +28,6 @@ struct MainFrame::Data
     wxBoxSizer*   vbox;
     wxSearchCtrl* search_ctrl;
     wxListCtrl*   result_list;
-
-    std::vector<Item> m_items; // Search items.
 };
 
 /**
@@ -40,22 +40,27 @@ static void UpdateResults(MainFrame::Data* data, const wxString& query)
     data->result_list->Freeze();
     data->result_list->DeleteAllItems();
 
-    wxString qLower = query.Lower();
-
-    long row = 0;
-    for (const auto& it : data->m_items)
+    auto it = wxGetApp().searcher->Query(query);
+    while (true)
     {
-        const wxString nameLower = it.name.Lower();
-        const wxString descLower = it.desc.Lower();
+        auto retv = it->Next();
+        if (std::holds_alternative<Searcher::Result>(retv))
+        {
+            auto ret = std::get<Searcher::Result>(retv);
+            long row = data->result_list->InsertItem(data->result_list->GetItemCount(), ret.title);
+            if (ret.path)
+            {
+                data->result_list->SetItem(row, 1, ret.path.value());
+            }
 
-        const bool matched = qLower.empty() || nameLower.Contains(qLower) || descLower.Contains(qLower);
-
-        if (!matched)
             continue;
+        }
 
-        row = data->result_list->InsertItem(data->result_list->GetItemCount(), it.name);
-        data->result_list->SetItem(row, 1, it.desc);
-        data->result_list->SetItem(row, 2, it.hotkey);
+        auto ret = std::get<Searcher::ResultCode>(retv);
+        if (ret == Searcher::ResultCode::End)
+        {
+            break;
+        }
     }
 
     /* Select the first entry by default. */
@@ -85,7 +90,7 @@ MainFrame::Data::Data(MainFrame* owner)
     result_list = new wxListCtrl(panel, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                                  wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_NONE);
     result_list->InsertColumn(0, "Name", wxLIST_FORMAT_LEFT, 200);
-    result_list->InsertColumn(1, "Description", wxLIST_FORMAT_LEFT, 300);
+    result_list->InsertColumn(1, "Path", wxLIST_FORMAT_LEFT, 300);
     result_list->InsertColumn(2, "Shortcut", wxLIST_FORMAT_LEFT, 80);
 
     /* Layout */
@@ -97,16 +102,6 @@ MainFrame::Data::Data(MainFrame* owner)
     search_ctrl->Bind(wxEVT_TEXT, &Data::OnSearchText, this);
     search_ctrl->Bind(wxEVT_TEXT_ENTER, &Data::OnSearchText, this);
     result_list->Bind(wxEVT_LIST_ITEM_ACTIVATED, &Data::OnItemActivated, this);
-
-    /* Example data */
-    m_items = {
-        { "FileZilla",             "Download and upload files via FTP, FTPS and SFTP", "Alt+1" },
-        { "Files",                 "Browse your files",                                "Alt+2" },
-        { "Personal File Sharing", "Preferences for sharing of files",                 "Alt+3" },
-        { "Archive Manager",       "Create and modify an archive",                     "Alt+4" },
-        { "Font Viewer",           "View fonts on your system",                        "Alt+5" },
-        { "Mail",                  "Send and receive mail",                            "Alt+6" },
-    };
 
     UpdateResults(this, "");
     search_ctrl->SetFocus();
