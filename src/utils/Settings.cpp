@@ -1,15 +1,16 @@
 #include <wx/wx.h>
-#include "Settings.hpp"
 #include <wx/filename.h>
-#include <wx/stdpaths.h>
 #include <nlohmann/json.hpp>
+#include "LaunchR.hpp"
+#include "Settings.hpp"
 
 using LR::SettingsManager;
 
 namespace LR
 {
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, use_ripgrep)
-}
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SettingLog, enable, path)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, log)
+} // namespace LR
 
 struct SettingsManager::Data
 {
@@ -34,13 +35,7 @@ struct SettingsManager::Data
  */
 static wxString GetConfigPath()
 {
-    const wxUniChar sep = wxFileName::GetPathSeparator();
-    const wxString  exePath = wxStandardPaths::Get().GetExecutablePath();
-
-    wxString configDir;
-    wxFileName::SplitPath(exePath, &configDir, nullptr, nullptr, wxPATH_NATIVE);
-
-    return configDir + sep + ".LaunchR" + sep + "config.json";
+    return LaunchRApp::GenDataPath("config.json");
 }
 
 bool LoadConfig(const wxString& path, nlohmann::json* data)

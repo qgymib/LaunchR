@@ -4,9 +4,15 @@
 namespace LR
 {
 
+struct SettingLog
+{
+    bool        enable = false; /* Enable logging file. */
+    std::string path;           /* File path. */
+};
+
 struct Settings
 {
-    bool use_ripgrep = true; /* Enable ripgrep support. */
+    SettingLog log; /* Log configuration. */
 };
 
 class SettingsManager

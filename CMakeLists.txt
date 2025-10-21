@@ -17,6 +17,7 @@ function(setup_target_wall name)
 endfunction()
 
 add_executable(${PROJECT_NAME} WIN32
+        src/utils/FileLogger.cpp
         src/utils/Settings.cpp
         src/widgets/MainFrame.cpp
         src/widgets/SettingsDialog.cpp
