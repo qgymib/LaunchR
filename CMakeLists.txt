@@ -21,6 +21,7 @@ add_executable(${PROJECT_NAME} WIN32
         src/searchers/PortableApps.cpp
         src/searchers/Searcher.cpp
         src/utils/FileLogger.cpp
+        src/utils/OpenFile.cpp
         src/utils/Settings.cpp
         src/widgets/MainFrame.cpp
         src/widgets/ResultListCtrl.cpp

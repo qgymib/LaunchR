@@ -1,20 +1,13 @@
 #include <wx/wx.h>
 #include <wx/listctrl.h>
 #include <wx/srchctrl.h>
-#include <wx/utils.h>
 #include <atomic>
-#include <algorithm>
-#include <vector>
-#include <list>
-#include <iomanip>
-#include <sstream>
-#include <format>
 #include <chrono>
+#include <thread>
+#include "utils/OpenFile.hpp"
 #include "LaunchR.hpp"
 #include "ResultListCtrl.hpp"
 #include "MainFrame.hpp"
-
-#include <thread>
 
 using namespace LR;
 typedef std::list<Searcher::IteratorPtr> IteratorList;
@@ -175,10 +168,7 @@ void MainFrame::Data::OnItemActivated(wxListEvent& event)
         wxString path = result_list->GetItemText(index, 1);
 
         wxLogDebug("Opening file: " + path + "");
-        if (!wxLaunchDefaultApplication(path))
-        {
-            wxLogWarning("Cannot open file: " + path + "");
-        }
+        OpenFile(path);
     }
 }
 
