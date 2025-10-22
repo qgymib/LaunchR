@@ -1,16 +1,21 @@
 #include <wx/wx.h>
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
-#include "LaunchR.hpp"
+#include "searchers/FileName.hpp"
+#include "searchers/PortableApps.hpp"
 #include "widgets/MainFrame.hpp"
+#include "LaunchR.hpp"
 
 wxIMPLEMENT_APP(LaunchRApp); // NOLINT
+
+using namespace LR;
 
 bool LaunchRApp::OnInit()
 {
     settings = new LR::SettingsManager();
     logger = new LR::FileLogger();
-    searcher = new LR::PortableAppSearcher();
+    searchers.push_back(new PortableAppSearcher);
+    searchers.push_back(new FileNameSearcher);
 
     auto frame = new LR::MainFrame(nullptr);
     frame->SetIcon(wxIcon("IDI_ICON1"));
@@ -21,7 +26,10 @@ bool LaunchRApp::OnInit()
 
 int LaunchRApp::OnExit()
 {
-    delete searcher;
+    for (auto searcher : searchers)
+    {
+        delete searcher;
+    }
     delete logger;
     delete settings;
     return 0;

@@ -19,7 +19,7 @@ struct Searcher
     enum class ResultCode : int
     {
         TryAgain, /* Try again. */
-        End,      /* No data. */
+        End,      /* No more data. */
     };
     using ResultVariant = std::variant<Result, ResultCode>;
 

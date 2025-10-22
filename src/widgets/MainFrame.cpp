@@ -3,10 +3,12 @@
 #include <wx/srchctrl.h>
 #include <algorithm>
 #include <vector>
+#include <list>
 #include "LaunchR.hpp"
 #include "MainFrame.hpp"
 
 using namespace LR;
+typedef std::list<Searcher::IteratorPtr> IteratorList;
 
 // Data model
 struct Item
@@ -40,26 +42,46 @@ static void UpdateResults(MainFrame::Data* data, const wxString& query)
     data->result_list->Freeze();
     data->result_list->DeleteAllItems();
 
-    auto it = wxGetApp().searcher->Query(query);
-    while (true)
+    IteratorList iterators;
+    for (auto& searcher : wxGetApp().searchers)
     {
-        auto retv = it->Next();
-        if (std::holds_alternative<Searcher::Result>(retv))
+        iterators.push_back(searcher->Query(query));
+    }
+
+    while (!iterators.empty())
+    {
+        IteratorList::iterator it = iterators.begin();
+        size_t                 result_cnt = 0;
+
+        while (it != iterators.end())
         {
-            auto ret = std::get<Searcher::Result>(retv);
-            long row = data->result_list->InsertItem(data->result_list->GetItemCount(), ret.title);
-            if (ret.path)
+            Searcher::ResultVariant ret_v;
+            while (std::holds_alternative<Searcher::Result>(ret_v = (*it)->Next()))
             {
-                data->result_list->SetItem(row, 1, ret.path.value());
+                Searcher::Result ret = std::get<Searcher::Result>(ret_v);
+                long             row = data->result_list->InsertItem(data->result_list->GetItemCount(), ret.title);
+                if (ret.path)
+                {
+                    data->result_list->SetItem(row, 1, ret.path.value());
+                }
+                result_cnt++;
             }
 
-            continue;
+            Searcher::ResultCode code = std::get<Searcher::ResultCode>(ret_v);
+            if (code == Searcher::ResultCode::End)
+            {
+                IteratorList::iterator it_tmp = it;
+                ++it;
+                iterators.erase(it_tmp);
+                continue;
+            }
+
+            ++it;
         }
 
-        auto ret = std::get<Searcher::ResultCode>(retv);
-        if (ret == Searcher::ResultCode::End)
+        if (result_cnt == 0)
         {
-            break;
+            wxThread::Sleep(10);
         }
     }
 

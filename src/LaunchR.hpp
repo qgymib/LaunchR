@@ -3,7 +3,8 @@
 
 #include <wx/wx.h>
 #include <wx/app.h>
-#include "searchers/PortableApps.hpp"
+#include <vector>
+#include "searchers/Searcher.hpp"
 #include "utils/FileLogger.hpp"
 #include "utils/Settings.hpp"
 
@@ -18,9 +19,9 @@ public:
     static wxString GenDataPath(const char* name);
 
 public:
-    LR::SettingsManager*     settings = nullptr; /* Settings manager. */
-    LR::FileLogger*          logger = nullptr;   /* File logger. */
-    LR::PortableAppSearcher* searcher = nullptr; /* Portable apps searcher. */
+    LR::SettingsManager*       settings = nullptr; /* Settings manager. */
+    LR::FileLogger*            logger = nullptr;   /* File logger. */
+    std::vector<LR::Searcher*> searchers;          /* Searchers. */
 };
 
 wxDECLARE_APP(LaunchRApp);
