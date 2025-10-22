@@ -14,6 +14,7 @@ struct Settings
 {
     SettingLog log;                       /* Log configuration. */
     bool       PortableAppSupport = true; /* Enable PortableApps.com format support. */
+    bool       FileNameSupport = true;    /* Enable filename search. */
 };
 
 class SettingsManager

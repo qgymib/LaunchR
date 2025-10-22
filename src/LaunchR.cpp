@@ -10,12 +10,23 @@ wxIMPLEMENT_APP(LaunchRApp); // NOLINT
 
 using namespace LR;
 
+static void RegisterSearcher(LaunchRApp* app)
+{
+    if (app->settings->Get().PortableAppSupport)
+    {
+        app->searchers.push_back(new PortableAppSearcher);
+    }
+    if (app->settings->Get().FileNameSupport)
+    {
+        app->searchers.push_back(new FileNameSearcher);
+    }
+}
+
 bool LaunchRApp::OnInit()
 {
     settings = new LR::SettingsManager();
     logger = new LR::FileLogger();
-    searchers.push_back(new PortableAppSearcher);
-    searchers.push_back(new FileNameSearcher);
+    RegisterSearcher(this);
 
     auto frame = new LR::MainFrame(nullptr);
     frame->SetIcon(wxIcon("IDI_ICON1"));
