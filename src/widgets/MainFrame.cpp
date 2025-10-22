@@ -1,6 +1,7 @@
 #include <wx/wx.h>
 #include <wx/listctrl.h>
 #include <wx/srchctrl.h>
+#include <wx/aboutdlg.h>
 #include <atomic>
 #include <chrono>
 #include <thread>
@@ -30,14 +31,14 @@ struct MainFrame::Data
 {
     Data(MainFrame* owner);
     ~Data();
+    void OnExit(wxCommandEvent&);
+    void OnAbout(wxCommandEvent&);
     void OnItemActivated(wxListEvent&);
     void OnSearchText(wxCommandEvent&);
     void OnUpdateStatusbarObjectCount(wxCommandEvent&);
     void OnUpdateStatusbarSearchingStatus(wxCommandEvent&);
 
     MainFrame*                 owner;
-    wxPanel*                   panel;
-    wxBoxSizer*                vbox;
     wxSearchCtrl*              search_ctrl;
     ResultListCtrl*            result_list;
     std::shared_ptr<QueryTask> query_task;
@@ -147,13 +148,33 @@ static void UpdateResults(MainFrame::Data* data, const wxString& query)
     data->query_task = std::make_shared<QueryTask>(data, query);
 }
 
+static void CreateMenuBar(MainFrame::Data* data)
+{
+    wxMenuBar* menu_bar = new wxMenuBar;
+
+    wxMenu* menu_file = new wxMenu;
+    menu_file->Append(wxID_EXIT);
+    menu_bar->Append(menu_file, L"&File");
+
+    wxMenu* menu_help = new wxMenu;
+    menu_help->Append(wxID_ABOUT);
+    menu_bar->Append(menu_help, L"&Help");
+
+    data->owner->SetMenuBar(menu_bar);
+    data->owner->Bind(wxEVT_MENU, &MainFrame::Data::OnExit, data, wxID_EXIT);
+    data->owner->Bind(wxEVT_MENU, &MainFrame::Data::OnAbout, data, wxID_ABOUT);
+}
+
 MainFrame::Data::Data(MainFrame* owner)
 {
     this->owner = owner;
 
+    /* Menubar. */
+    CreateMenuBar(this);
+
     /* Basis UI */
-    panel = new wxPanel(owner);
-    vbox = new wxBoxSizer(wxVERTICAL);
+    wxPanel*    panel = new wxPanel(owner);
+    wxBoxSizer* vbox = new wxBoxSizer(wxVERTICAL);
 
     /* Search box */
     search_ctrl = new wxSearchCtrl(panel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
@@ -187,6 +208,22 @@ MainFrame::Data::~Data()
 {
     /* manually stop to avoid multithreaded competition. */
     query_task.reset();
+}
+
+void MainFrame::Data::OnExit(wxCommandEvent&)
+{
+    owner->Close(true);
+}
+
+void MainFrame::Data::OnAbout(wxCommandEvent&)
+{
+    wxAboutDialogInfo info;
+    info.SetName("LaunchR");
+    info.SetVersion("0.1.1");
+    info.SetDescription("Portable and cross-platform launcher and searcher.");
+    info.SetCopyright("Copyright (c) 2025 qgymib");
+    info.SetWebSite("https://github.com/qgymib/LaunchR");
+    wxAboutBox(info);
 }
 
 void MainFrame::Data::OnItemActivated(wxListEvent& event)
