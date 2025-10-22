@@ -4,19 +4,15 @@
 #include <algorithm>
 #include <vector>
 #include <list>
+#include <locale>
+#include <iomanip>
+#include <sstream>
+#include <format>
 #include "LaunchR.hpp"
 #include "MainFrame.hpp"
 
 using namespace LR;
 typedef std::list<Searcher::IteratorPtr> IteratorList;
-
-// Data model
-struct Item
-{
-    wxString name;
-    wxString desc;
-    wxString hotkey;
-};
 
 struct MainFrame::Data : wxTimer
 {
@@ -90,6 +86,8 @@ MainFrame::Data::Data(MainFrame* owner)
     panel->SetSizerAndFit(vbox);
     owner->Centre();
 
+    owner->CreateStatusBar();
+
     UpdateResults(this, "");
     search_ctrl->SetFocus();
 }
@@ -107,6 +105,23 @@ void MainFrame::Data::OnItemActivated(wxListEvent& event)
 void MainFrame::Data::OnSearchText(wxCommandEvent&)
 {
     UpdateResults(this, search_ctrl->GetValue());
+}
+
+/**
+ * @brief Formats the given number with commas as thousand separators.
+ * @param[in] number The number to format.
+ * @return A string representation of the formatted number with commas.
+ */
+static std::string format_with_commas(long number)
+{
+    std::string num_str = std::to_string(number);
+    int         insert_position = num_str.length() - 3;
+    while (insert_position > 0)
+    {
+        num_str.insert(insert_position, ",");
+        insert_position -= 3;
+    }
+    return num_str;
 }
 
 static void FetchNewResults(MainFrame::Data* data)
@@ -148,6 +163,10 @@ static void FetchNewResults(MainFrame::Data* data)
     }
 
     data->result_list->Thaw();
+
+    wxString num = format_with_commas(data->result_list->GetItemCount());
+    wxString status_msg = num + " Objects";
+    data->owner->SetStatusText(status_msg);
 }
 
 void MainFrame::Data::Notify()
