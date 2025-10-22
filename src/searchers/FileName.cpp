@@ -1,5 +1,4 @@
 #include <wx/wx.h>
-#include <wx/regex.h>
 #include <wx/log.h>
 #include <atomic>
 #include <thread>
@@ -17,7 +16,7 @@ struct FileNameSearcherIter : Searcher::Iterator
     ~FileNameSearcherIter() override;
     Searcher::ResultVariant Next() override;
 
-    wxRegEx                 query_regex;         /* Regex for query. */
+    wxString                query;               /* Query string. */
     std::atomic<bool>       flag_running = true; /* Looping flag. */
     std::thread*            search_thread;       /* Search threads. */
     std::list<std::wstring> pending_paths;       /* Paths to search. */
@@ -47,8 +46,11 @@ static void SearchFileNameInPath(struct FileNameSearcherIter* searcher, const st
             continue;
         }
 
-        wxString name(entry.path().filename().wstring());
-        if (searcher->query_regex.Matches(name))
+        const wxString name(entry.path().filename().wstring());
+        const wxString name_lower = name.Lower();
+        const bool     matched = searcher->query.empty() || name_lower.Contains(searcher->query);
+
+        if (matched)
         {
             Searcher::Result ret;
             ret.title = name;
@@ -85,7 +87,7 @@ static void SearchFileNameThread(struct FileNameSearcherIter* searcher)
 
 FileNameSearcherIter::FileNameSearcherIter(const wxString& query)
 {
-    query_regex.Compile(query);
+    this->query = query.Lower();
 
     const wxString     search_path = LaunchRApp::GetWorkingDir();
     const std::wstring search_path_std = search_path.ToStdWstring();
