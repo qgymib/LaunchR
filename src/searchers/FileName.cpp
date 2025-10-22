@@ -1,5 +1,6 @@
 #include <wx/wx.h>
 #include <wx/regex.h>
+#include <wx/log.h>
 #include <atomic>
 #include <thread>
 #include <list>
@@ -65,7 +66,15 @@ static void SearchFileNameThread(struct FileNameSearcherIter* searcher)
     {
         std::wstring path = searcher->pending_paths.front();
         searcher->pending_paths.pop_front();
-        SearchFileNameInPath(searcher, path);
+
+        try
+        {
+            SearchFileNameInPath(searcher, path);
+        }
+        catch (const std::filesystem::filesystem_error& e)
+        {
+            wxLogVerbose("Access fs failed: %s", e.what());
+        }
     }
 
     {
