@@ -16,17 +16,17 @@ struct FileNameSearcherIter : Searcher::Iterator
     ~FileNameSearcherIter() override;
     Searcher::ResultVariant Next() override;
 
-    wxRegEx                query_regex;         /* Regex for query. */
-    std::atomic<bool>      flag_running = true; /* Looping flag. */
-    std::thread*           search_thread;       /* Search threads. */
-    std::list<std::string> pending_paths;       /* Paths to search */
+    wxRegEx                 query_regex;         /* Regex for query. */
+    std::atomic<bool>       flag_running = true; /* Looping flag. */
+    std::thread*            search_thread;       /* Search threads. */
+    std::list<std::wstring> pending_paths;       /* Paths to search. */
 
     bool                        flag_done = false; /* Search done flag. */
     std::list<Searcher::Result> results;           /* Storage for search results. */
     std::mutex                  result_mutex;      /* Mutex for results. */
 };
 
-static void SearchFileNameInPath(struct FileNameSearcherIter* searcher, const std::string& path)
+static void SearchFileNameInPath(struct FileNameSearcherIter* searcher, const std::wstring& path)
 {
     for (const auto& entry : std::filesystem::directory_iterator(path))
     {
@@ -37,7 +37,7 @@ static void SearchFileNameInPath(struct FileNameSearcherIter* searcher, const st
 
         if (entry.is_directory())
         {
-            searcher->pending_paths.push_back(entry.path().string());
+            searcher->pending_paths.push_back(entry.path().wstring());
             continue;
         }
 
@@ -46,12 +46,12 @@ static void SearchFileNameInPath(struct FileNameSearcherIter* searcher, const st
             continue;
         }
 
-        wxString name(entry.path().filename().string());
+        wxString name(entry.path().filename().wstring());
         if (searcher->query_regex.Matches(name))
         {
             Searcher::Result ret;
             ret.title = name;
-            ret.path = entry.path().string();
+            ret.path = entry.path().wstring();
 
             std::lock_guard<std::mutex> lock(searcher->result_mutex);
             searcher->results.push_back(ret);
@@ -63,7 +63,7 @@ static void SearchFileNameThread(struct FileNameSearcherIter* searcher)
 {
     while (searcher->flag_running && !searcher->pending_paths.empty())
     {
-        std::string path = searcher->pending_paths.front();
+        std::wstring path = searcher->pending_paths.front();
         searcher->pending_paths.pop_front();
         SearchFileNameInPath(searcher, path);
     }
@@ -78,8 +78,8 @@ FileNameSearcherIter::FileNameSearcherIter(const wxString& query)
 {
     query_regex.Compile(query);
 
-    const wxString    search_path = LaunchRApp::GetWorkingDir();
-    const std::string search_path_std = search_path.ToStdString();
+    const wxString     search_path = LaunchRApp::GetWorkingDir();
+    const std::wstring search_path_std = search_path.ToStdWstring();
     pending_paths.push_back(search_path_std);
 
     search_thread = new std::thread(SearchFileNameThread, this);
