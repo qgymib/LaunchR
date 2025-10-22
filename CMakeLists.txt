@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.10)
 project(LaunchR)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -41,7 +41,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
 
 set(wxBUILD_SHARED OFF)
 add_subdirectory(third_party/wxWidgets)
-target_link_libraries(${PROJECT_NAME} PRIVATE wx::net wx::core wx::base)
+target_link_libraries(${PROJECT_NAME} PRIVATE wx::base wx::core)
 
 ###############################################################################
 # Setup static link
