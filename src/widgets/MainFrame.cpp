@@ -18,18 +18,23 @@ struct Item
     wxString hotkey;
 };
 
-struct MainFrame::Data
+struct MainFrame::Data : wxTimer
 {
     Data(MainFrame* owner);
-    void OnItemActivated(wxListEvent& event);
-    void OnSearchText(wxCommandEvent& event);
+    void OnItemActivated(wxListEvent&);
+    void OnSearchText(wxCommandEvent&);
+    void Notify();
 
-    MainFrame* owner;
-
+    MainFrame*    owner;
     wxPanel*      panel;
     wxBoxSizer*   vbox;
     wxSearchCtrl* search_ctrl;
     wxListCtrl*   result_list;
+
+    wxString     query;
+    bool         new_query;
+    bool         default_selected;
+    IteratorList query_iterators;
 };
 
 /**
@@ -39,65 +44,26 @@ struct MainFrame::Data
  */
 static void UpdateResults(MainFrame::Data* data, const wxString& query)
 {
-    data->result_list->Freeze();
-    data->result_list->DeleteAllItems();
-
-    IteratorList iterators;
-    for (auto& searcher : wxGetApp().searchers)
+    /*
+     * Stat timer.
+     * User query cannot start here, it may block the UI thread.
+     *
+     * Only start the timer when no pending query.
+     */
+    if (!data->new_query)
     {
-        iterators.push_back(searcher->Query(query));
+        data->wxTimer::Start(10, false);
     }
 
-    while (!iterators.empty())
-    {
-        IteratorList::iterator it = iterators.begin();
-        size_t                 result_cnt = 0;
-
-        while (it != iterators.end())
-        {
-            Searcher::ResultVariant ret_v;
-            while (std::holds_alternative<Searcher::Result>(ret_v = (*it)->Next()))
-            {
-                Searcher::Result ret = std::get<Searcher::Result>(ret_v);
-                long             row = data->result_list->InsertItem(data->result_list->GetItemCount(), ret.title);
-                if (ret.path)
-                {
-                    data->result_list->SetItem(row, 1, ret.path.value());
-                }
-                result_cnt++;
-            }
-
-            Searcher::ResultCode code = std::get<Searcher::ResultCode>(ret_v);
-            if (code == Searcher::ResultCode::End)
-            {
-                IteratorList::iterator it_tmp = it;
-                ++it;
-                iterators.erase(it_tmp);
-                continue;
-            }
-
-            ++it;
-        }
-
-        if (result_cnt == 0)
-        {
-            wxThread::Sleep(10);
-        }
-    }
-
-    /* Select the first entry by default. */
-    if (data->result_list->GetItemCount() > 0)
-    {
-        data->result_list->SetItemState(0, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
-        data->result_list->EnsureVisible(0);
-    }
-
-    data->result_list->Thaw();
+    data->query = query;
+    data->new_query = true;
 }
 
 MainFrame::Data::Data(MainFrame* owner)
 {
     this->owner = owner;
+    new_query = false;
+    default_selected = false;
 
     /* Basis UI */
     panel = new wxPanel(owner);
@@ -107,6 +73,8 @@ MainFrame::Data::Data(MainFrame* owner)
     search_ctrl = new wxSearchCtrl(panel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
     search_ctrl->ShowSearchButton(true);
     search_ctrl->ShowCancelButton(true);
+    search_ctrl->Bind(wxEVT_TEXT, &Data::OnSearchText, this);
+    search_ctrl->Bind(wxEVT_TEXT_ENTER, &Data::OnSearchText, this);
 
     /* Result list */
     result_list = new wxListCtrl(panel, wxID_ANY, wxDefaultPosition, wxDefaultSize,
@@ -114,16 +82,13 @@ MainFrame::Data::Data(MainFrame* owner)
     result_list->InsertColumn(0, "Name", wxLIST_FORMAT_LEFT, 200);
     result_list->InsertColumn(1, "Path", wxLIST_FORMAT_LEFT, 300);
     result_list->InsertColumn(2, "Shortcut", wxLIST_FORMAT_LEFT, 80);
+    result_list->Bind(wxEVT_LIST_ITEM_ACTIVATED, &Data::OnItemActivated, this);
 
     /* Layout */
     vbox->Add(search_ctrl, 0, wxEXPAND | wxALL, 8);
     vbox->Add(result_list, 1, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 8);
     panel->SetSizerAndFit(vbox);
     owner->Centre();
-
-    search_ctrl->Bind(wxEVT_TEXT, &Data::OnSearchText, this);
-    search_ctrl->Bind(wxEVT_TEXT_ENTER, &Data::OnSearchText, this);
-    result_list->Bind(wxEVT_LIST_ITEM_ACTIVATED, &Data::OnItemActivated, this);
 
     UpdateResults(this, "");
     search_ctrl->SetFocus();
@@ -142,6 +107,74 @@ void MainFrame::Data::OnItemActivated(wxListEvent& event)
 void MainFrame::Data::OnSearchText(wxCommandEvent&)
 {
     UpdateResults(this, search_ctrl->GetValue());
+}
+
+static void FetchNewResults(MainFrame::Data* data)
+{
+    data->result_list->Freeze();
+
+    IteratorList::iterator it = data->query_iterators.begin();
+    while (it != data->query_iterators.end())
+    {
+        Searcher::ResultVariant ret_v;
+        while (std::holds_alternative<Searcher::Result>(ret_v = (*it)->Next()))
+        {
+            Searcher::Result ret = std::get<Searcher::Result>(ret_v);
+            long             row = data->result_list->InsertItem(data->result_list->GetItemCount(), ret.title);
+            if (ret.path)
+            {
+                data->result_list->SetItem(row, 1, ret.path.value());
+            }
+        }
+
+        Searcher::ResultCode code = std::get<Searcher::ResultCode>(ret_v);
+        if (code == Searcher::ResultCode::End)
+        {
+            IteratorList::iterator it_tmp = it;
+            ++it;
+            data->query_iterators.erase(it_tmp);
+            continue;
+        }
+
+        ++it;
+    }
+
+    /* Select the first entry by default. */
+    if (!data->default_selected && data->result_list->GetItemCount() > 0)
+    {
+        data->result_list->SetItemState(0, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
+        data->result_list->EnsureVisible(0);
+        data->default_selected = true;
+    }
+
+    data->result_list->Thaw();
+}
+
+void MainFrame::Data::Notify()
+{
+    /* If there is a new query, restart search. */
+    if (new_query)
+    {
+        query_iterators.clear();
+        for (auto& searcher : wxGetApp().searchers)
+        {
+            query_iterators.push_back(searcher->Query(query));
+        }
+
+        new_query = false;
+        default_selected = false;
+
+        result_list->Freeze();
+        result_list->DeleteAllItems();
+        result_list->Thaw();
+    }
+
+    FetchNewResults(this);
+
+    if (query_iterators.empty())
+    {
+        wxTimer::Stop();
+    }
 }
 
 MainFrame::MainFrame(wxWindow* parent) : wxFrame(parent, wxID_ANY, "Launcher", wxDefaultPosition, wxSize(600, 420))

@@ -6,13 +6,11 @@
 namespace LR
 {
 
-class MainFrame : public wxFrame
+struct MainFrame : wxFrame
 {
-public:
     explicit MainFrame(wxWindow* parent);
     ~MainFrame() override;
 
-public:
     struct Data;
     struct Data* m_data;
 };
