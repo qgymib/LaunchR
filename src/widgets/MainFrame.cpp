@@ -1,6 +1,7 @@
 #include <wx/wx.h>
 #include <wx/listctrl.h>
 #include <wx/srchctrl.h>
+#include <wx/utils.h>
 #include <algorithm>
 #include <vector>
 #include <list>
@@ -97,8 +98,13 @@ void MainFrame::Data::OnItemActivated(wxListEvent& event)
     long index = event.GetIndex();
     if (index >= 0 && index < result_list->GetItemCount())
     {
-        wxString name = result_list->GetItemText(index);
-        wxMessageBox("Activated: " + name, "Open", wxOK | wxICON_INFORMATION, owner);
+        wxString path = result_list->GetItemText(index, 1);
+
+        wxLogDebug("Opening file: " + path + "");
+        if (!wxLaunchDefaultApplication(path))
+        {
+            wxLogWarning("Cannot open file: " + path + "");
+        }
     }
 }
 

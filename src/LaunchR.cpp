@@ -24,6 +24,8 @@ static void RegisterSearcher(LaunchRApp* app)
 
 bool LaunchRApp::OnInit()
 {
+    wxLog::SetLogLevel(wxLOG_Debug);
+
     settings = new LR::SettingsManager();
     logger = new LR::FileLogger();
     RegisterSearcher(this);

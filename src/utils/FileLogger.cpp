@@ -59,10 +59,13 @@ FileLogger::Data::Data()
     }
 
     logger = new wxLogStderr(file, wxConvUTF8);
+    wxLog::SetActiveTarget(logger);
 }
 
 FileLogger::Data::~Data()
 {
+    wxLog::SetActiveTarget(nullptr);
+
     delete logger;
     if (file != nullptr)
     {
