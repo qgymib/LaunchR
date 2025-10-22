@@ -48,6 +48,12 @@ void ResultListCtrl::UpdateUI()
     wxQueueEvent(this, e);
 }
 
+size_t ResultListCtrl::GetCount() const
+{
+    std::lock_guard<std::mutex> lock(m_data->result_mutex);
+    return m_data->results.size();
+}
+
 wxString ResultListCtrl::OnGetItemText(long item, long column) const
 {
     Searcher::Result ret;

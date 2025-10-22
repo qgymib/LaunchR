@@ -15,11 +15,30 @@ struct ResultListCtrl : wxListCtrl
 
     ResultListCtrl(wxWindow* parent);
     ~ResultListCtrl() override;
-    void Clear();
-    void Append(const LR::Searcher::Result& result);
-    void UpdateUI();
-    void OnUpdateUI(wxCommandEvent&);
 
+    /**
+     * @brief Clear all contents and update UI.
+     */
+    void Clear();
+
+    /**
+     * @brief Append result into table. The UI is not update until UpdateUI() called.
+     * @param[in] result Information.
+     */
+    void Append(const LR::Searcher::Result& result);
+
+    /**
+     * @brief Refresh UI.
+     */
+    void UpdateUI();
+
+    /**
+     * @brief Get the number of contents.
+     * @return Item number.
+     */
+    size_t GetCount() const;
+
+    void     OnUpdateUI(wxCommandEvent&);
     wxString OnGetItemText(long item, long column) const override;
 
     struct Data;

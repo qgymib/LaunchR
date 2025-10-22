@@ -12,6 +12,9 @@
 using namespace LR;
 typedef std::list<Searcher::IteratorPtr> IteratorList;
 
+wxDEFINE_EVENT(LR_MAINFRAME_UPDATE_STATUSBAR_OBJECT_COUNT, wxCommandEvent);
+wxDEFINE_EVENT(LR_MAINFRAME_UPDATE_STATUSBAR_SEARCHING_STATUS, wxCommandEvent);
+
 struct QueryTask
 {
     QueryTask(MainFrame::Data* frame, const wxString& query);
@@ -29,6 +32,8 @@ struct MainFrame::Data
     ~Data();
     void OnItemActivated(wxListEvent&);
     void OnSearchText(wxCommandEvent&);
+    void OnUpdateStatusbarObjectCount(wxCommandEvent&);
+    void OnUpdateStatusbarSearchingStatus(wxCommandEvent&);
 
     MainFrame*                 owner;
     wxPanel*                   panel;
@@ -38,6 +43,20 @@ struct MainFrame::Data
     std::shared_ptr<QueryTask> query_task;
 };
 
+static void UpdateStatusBarSearchingStatus(struct MainFrame* frame, const wxString& text)
+{
+    wxCommandEvent* e = new wxCommandEvent(LR_MAINFRAME_UPDATE_STATUSBAR_SEARCHING_STATUS);
+    e->SetString(text);
+    wxQueueEvent(frame, e);
+}
+
+static void UpdateStatusBarObjectCount(struct MainFrame* frame, int count)
+{
+    wxCommandEvent* e = new wxCommandEvent(LR_MAINFRAME_UPDATE_STATUSBAR_OBJECT_COUNT);
+    e->SetInt(count);
+    wxQueueEvent(frame, e);
+}
+
 static void QueryTaskThread(struct QueryTask* task)
 {
     IteratorList iterators;
@@ -45,6 +64,7 @@ static void QueryTaskThread(struct QueryTask* task)
     {
         iterators.push_back(searcher->Query(task->query));
     }
+    UpdateStatusBarSearchingStatus(task->frame->owner, "Searching...");
 
     auto start_time = std::chrono::steady_clock::now();
     while (task->flag_running && !iterators.empty())
@@ -65,6 +85,7 @@ static void QueryTaskThread(struct QueryTask* task)
                 if (duration.count() > 100)
                 {
                     task->frame->result_list->UpdateUI();
+                    UpdateStatusBarObjectCount(task->frame->owner, task->frame->result_list->GetCount());
                     start_time = now_time;
                 }
             }
@@ -87,7 +108,13 @@ static void QueryTaskThread(struct QueryTask* task)
         }
     }
 
+    if (iterators.empty())
+    {
+        UpdateStatusBarSearchingStatus(task->frame->owner, "");
+    }
+
     task->frame->result_list->UpdateUI();
+    UpdateStatusBarObjectCount(task->frame->owner, task->frame->result_list->GetCount());
 }
 
 QueryTask::QueryTask(MainFrame::Data* frame, const wxString& query)
@@ -149,6 +176,8 @@ MainFrame::Data::Data(MainFrame* owner)
     owner->Centre();
 
     owner->CreateStatusBar(2);
+    owner->Bind(LR_MAINFRAME_UPDATE_STATUSBAR_SEARCHING_STATUS, &Data::OnUpdateStatusbarSearchingStatus, this);
+    owner->Bind(LR_MAINFRAME_UPDATE_STATUSBAR_OBJECT_COUNT, &Data::OnUpdateStatusbarObjectCount, this);
 
     UpdateResults(this, "");
     search_ctrl->SetFocus();
@@ -177,7 +206,6 @@ void MainFrame::Data::OnSearchText(wxCommandEvent&)
     UpdateResults(this, search_ctrl->GetValue());
 }
 
-#if 0
 /**
  * @brief Formats the given number with commas as thousand separators.
  * @param[in] number The number to format.
@@ -194,7 +222,25 @@ static std::string format_with_commas(long number)
     }
     return num_str;
 }
-#endif
+
+void MainFrame::Data::OnUpdateStatusbarObjectCount(wxCommandEvent& e)
+{
+    int      count = e.GetInt();
+    wxString count_str = format_with_commas(count);
+    wxString msg = count_str + " object";
+    if (count > 1)
+    {
+        msg += "s";
+    }
+    msg += " found";
+
+    owner->SetStatusText(msg, 0);
+}
+
+void MainFrame::Data::OnUpdateStatusbarSearchingStatus(wxCommandEvent& e)
+{
+    owner->SetStatusText(e.GetString(), 1);
+}
 
 MainFrame::MainFrame(wxWindow* parent) : wxFrame(parent, wxID_ANY, "Launcher", wxDefaultPosition, wxSize(600, 420))
 {
