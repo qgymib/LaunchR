@@ -86,7 +86,7 @@ MainFrame::Data::Data(MainFrame* owner)
     panel->SetSizerAndFit(vbox);
     owner->Centre();
 
-    owner->CreateStatusBar();
+    owner->CreateStatusBar(2);
 
     UpdateResults(this, "");
     search_ctrl->SetFocus();
@@ -166,7 +166,7 @@ static void FetchNewResults(MainFrame::Data* data)
 
     wxString num = format_with_commas(data->result_list->GetItemCount());
     wxString status_msg = num + " Objects";
-    data->owner->SetStatusText(status_msg);
+    data->owner->SetStatusText(status_msg, 0);
 }
 
 void MainFrame::Data::Notify()
@@ -186,12 +186,15 @@ void MainFrame::Data::Notify()
         result_list->Freeze();
         result_list->DeleteAllItems();
         result_list->Thaw();
+
+        owner->SetStatusText("Searching...", 1);
     }
 
     FetchNewResults(this);
 
     if (query_iterators.empty())
     {
+        owner->SetStatusText("", 1);
         wxTimer::Stop();
     }
 }
