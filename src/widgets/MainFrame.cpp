@@ -35,6 +35,7 @@ struct MainFrame::Data
     void OnAbout(wxCommandEvent&);
     void OnItemActivated(wxListEvent&);
     void OnSearchText(wxCommandEvent&);
+    void OnSearchKeyDown(wxKeyEvent&);
     void OnUpdateStatusbarObjectCount(wxCommandEvent&);
     void OnUpdateStatusbarSearchingStatus(wxCommandEvent&);
 
@@ -182,6 +183,7 @@ MainFrame::Data::Data(MainFrame* owner)
     search_ctrl->ShowCancelButton(true);
     search_ctrl->Bind(wxEVT_TEXT, &Data::OnSearchText, this);
     search_ctrl->Bind(wxEVT_TEXT_ENTER, &Data::OnSearchText, this);
+    search_ctrl->Bind(wxEVT_KEY_DOWN, &Data::OnSearchKeyDown, this);
 
     /* Result list */
     result_list = new ResultListCtrl(panel);
@@ -238,6 +240,90 @@ void MainFrame::Data::OnItemActivated(wxListEvent& event)
 void MainFrame::Data::OnSearchText(wxCommandEvent&)
 {
     UpdateResults(this, search_ctrl->GetValue());
+}
+
+void MainFrame::Data::OnSearchKeyDown(wxKeyEvent& e)
+{
+    int key = e.GetKeyCode();
+    if (key != WXK_DOWN && key != WXK_UP && key != WXK_PAGEUP && key != WXK_PAGEDOWN)
+    {
+        e.Skip();
+        return;
+    }
+
+    long count = result_list->GetItemCount();
+    if (count <= 0)
+    {
+        return;
+    }
+
+    long selected = result_list->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+    long newSel = selected;
+
+    if (key == WXK_DOWN)
+    {
+        if (selected == -1)
+            newSel = 0;
+        else
+        {
+            newSel = selected + 1;
+            if (newSel >= count)
+                newSel = count - 1;
+        }
+    }
+    else if (key == WXK_UP)
+    {
+        if (selected == -1)
+            newSel = count - 1;
+        else
+        {
+            newSel = selected - 1;
+            if (newSel < 0)
+                newSel = 0;
+        }
+    }
+    else if (key == WXK_PAGEDOWN)
+    {
+        int page = result_list->GetCountPerPage();
+        if (page <= 0)
+            page = 10;
+        if (selected == -1)
+        {
+            newSel = page - 1;
+            if (newSel >= count)
+                newSel = count - 1;
+        }
+        else
+        {
+            newSel = selected + page;
+            if (newSel >= count)
+                newSel = count - 1;
+        }
+    }
+    else /* WXK_PAGEUP */
+    {
+        int page = result_list->GetCountPerPage();
+        if (page <= 0)
+            page = 10;
+        if (selected == -1)
+        {
+            newSel = 0;
+        }
+        else
+        {
+            newSel = selected - page;
+            if (newSel < 0)
+                newSel = 0;
+        }
+    }
+
+    if (selected != -1)
+    {
+        result_list->SetItemState(selected, 0, wxLIST_STATE_SELECTED | wxLIST_STATE_FOCUSED);
+    }
+    result_list->SetItemState(newSel, wxLIST_STATE_SELECTED | wxLIST_STATE_FOCUSED,
+                              wxLIST_STATE_SELECTED | wxLIST_STATE_FOCUSED);
+    result_list->EnsureVisible(newSel);
 }
 
 /**
