@@ -28,7 +28,7 @@ struct ResultListCtrl::Data
     ResultVec  results;      /* Content list. */
 
     wxImageList* icon_list; /* Image list for icons, working in UI thread. */
-    IconMap      icon_map;  /* File icon and index. Key=ext, value=index. */
+    IconMap      icon_map;  /* File icon and index. Key=ext(or path), value=index. */
 };
 
 ResultListCtrl::Data::Data(ResultListCtrl* owner)
@@ -137,6 +137,50 @@ wxString ResultListCtrl::OnGetItemText(long item, long column) const
     return "";
 }
 
+static int GetImageForExe(ResultListCtrl::Data* data, const wxString& path)
+{
+    std::wstring      wpath = path.ToStdWstring();
+    IconMap::iterator it = data->icon_map.find(wpath);
+    if (it != data->icon_map.end())
+    {
+        return it->second;
+    }
+
+    wxIcon icon(path, wxBITMAP_TYPE_ICO);
+    if (!icon.IsOk())
+    {
+        data->icon_map.insert(IconMap::value_type(wpath, -1));
+        return -1;
+    }
+
+    icon = ResizeIcon(icon, data->icon_width, data->icon_height);
+    int idx = data->icon_list->Add(icon);
+    data->icon_map.insert(IconMap::value_type(wpath, idx));
+
+    return idx;
+}
+
+static int GetImageForFile(ResultListCtrl::Data* data, const wxString& ext)
+{
+    /* Search for icon in image list. */
+    std::wstring      wext = ext.ToStdWstring();
+    IconMap::iterator it = data->icon_map.find(wext);
+    if (it != data->icon_map.end())
+    {
+        return it->second;
+    }
+
+    int    idx = -1;
+    wxIcon icon = GetSystemIconForExtension(ext);
+    if (icon.IsOk())
+    {
+        icon = ResizeIcon(icon, data->icon_width, data->icon_height);
+        idx = data->icon_list->Add(icon);
+    }
+    data->icon_map.insert(IconMap::value_type(wext, idx));
+    return idx;
+}
+
 int ResultListCtrl::OnGetItemColumnImage(long item, long column) const
 {
     if (column != 0)
@@ -166,23 +210,11 @@ int ResultListCtrl::OnGetItemColumnImage(long item, long column) const
         return -1;
     }
 
-    /* Search for icon in image list. */
-    std::wstring      wext = ext.ToStdWstring();
-    IconMap::iterator it = m_data->icon_map.find(wext);
-    if (it != m_data->icon_map.end())
+    if (ext.Matches("exe"))
     {
-        return it->second;
+        return GetImageForExe(m_data, path);
     }
-
-    int    idx = -1;
-    wxIcon icon = GetSystemIconForExtension(ext);
-    if (icon.IsOk())
-    {
-        icon = ResizeIcon(icon, m_data->icon_width, m_data->icon_height);
-        idx = m_data->icon_list->Add(icon);
-    }
-    m_data->icon_map.insert(IconMap::value_type(wext, idx));
-    return idx;
+    return GetImageForFile(m_data, ext);
 }
 
 void ResultListCtrl::Data::OnUpdateUI(wxCommandEvent&)
