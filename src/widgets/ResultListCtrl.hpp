@@ -3,7 +3,6 @@
 
 #include <wx/wx.h>
 #include <wx/listctrl.h>
-
 #include "searchers/Searcher.hpp"
 
 namespace LR
@@ -38,8 +37,9 @@ struct ResultListCtrl : wxListCtrl
      */
     size_t GetCount() const;
 
-    void     OnUpdateUI(wxCommandEvent&);
+
     wxString OnGetItemText(long item, long column) const override;
+    int      OnGetItemColumnImage(long item, long column) const override;
 
     struct Data;
     struct Data* m_data;
