@@ -37,7 +37,6 @@ struct ResultListCtrl : wxListCtrl
      */
     size_t GetCount() const;
 
-
     wxString OnGetItemText(long item, long column) const override;
     int      OnGetItemColumnImage(long item, long column) const override;
 

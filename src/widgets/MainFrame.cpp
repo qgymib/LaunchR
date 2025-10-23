@@ -185,9 +185,6 @@ MainFrame::Data::Data(MainFrame* owner)
 
     /* Result list */
     result_list = new ResultListCtrl(panel);
-    result_list->InsertColumn(0, "Name", wxLIST_FORMAT_LEFT, 200);
-    result_list->InsertColumn(1, "Path", wxLIST_FORMAT_LEFT, 300);
-    result_list->InsertColumn(2, "Shortcut", wxLIST_FORMAT_LEFT, 80);
     result_list->Bind(wxEVT_LIST_ITEM_ACTIVATED, &Data::OnItemActivated, this);
 
     /* Layout */

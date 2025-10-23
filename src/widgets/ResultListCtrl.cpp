@@ -77,6 +77,9 @@ ResultListCtrl::ResultListCtrl(wxWindow* parent)
     m_data->icon_list = new wxImageList(m_data->icon_width, m_data->icon_height);
     wxListCtrl::AssignImageList(m_data->icon_list, wxIMAGE_LIST_SMALL);
 
+    InsertColumn(0, _("Name"), wxLIST_FORMAT_LEFT, 200);
+    InsertColumn(1, _("Path"), wxLIST_FORMAT_LEFT, 350);
+
     Bind(LR_RESULT_LIST_UPDATE, &Data::OnUpdateUI, m_data);
 }
 
