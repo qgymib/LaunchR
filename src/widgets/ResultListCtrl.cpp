@@ -130,7 +130,7 @@ wxString ResultListCtrl::OnGetItemText(long item, long column) const
     case 0:
         return ret.title;
     case 1:
-        return ret.path ? ret.path.value() : "";
+        return ret.path.has_value() ? ret.path.value() : wxString("");
     default:
         break;
     }
