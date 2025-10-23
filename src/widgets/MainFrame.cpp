@@ -362,7 +362,7 @@ void MainFrame::Data::OnUpdateStatusbarSearchingStatus(wxCommandEvent& e)
     owner->SetStatusText(e.GetString(), 1);
 }
 
-MainFrame::MainFrame(wxWindow* parent) : wxFrame(parent, wxID_ANY, "Launcher", wxDefaultPosition, wxSize(600, 420))
+MainFrame::MainFrame(wxWindow* parent) : wxFrame(parent, wxID_ANY, "LaunchR", wxDefaultPosition, wxSize(600, 420))
 {
     m_data = new MainFrame::Data(this);
 }
