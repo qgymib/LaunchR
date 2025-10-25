@@ -3,6 +3,7 @@
 #include <wx/stdpaths.h>
 #include "searchers/FileName.hpp"
 #include "searchers/PortableApps.hpp"
+#include "searchers/Text.hpp"
 #include "widgets/MainFrame.hpp"
 #include "LaunchR.hpp"
 
@@ -19,6 +20,10 @@ static void RegisterSearcher(LaunchRApp* app)
     if (app->settings->Get().FileNameSupport)
     {
         app->searchers.push_back(new FileNameSearcher);
+    }
+    if (app->settings->Get().TextSupport)
+    {
+        app->searchers.push_back(new TextSearcher);
     }
 }
 

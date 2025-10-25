@@ -12,9 +12,11 @@ struct SettingLog
 
 struct Settings
 {
-    SettingLog log;                       /* Log configuration. */
-    bool       PortableAppSupport = true; /* Enable PortableApps.com format support. */
-    bool       FileNameSupport = true;    /* Enable filename search. */
+    SettingLog log;                           /* Log configuration. */
+    bool       PortableAppSupport = true;     /* Enable PortableApps.com format support. */
+    bool       FileNameSupport = true;        /* Enable filename search. */
+    bool       TextSupport = true;            /* Enable text search. */
+    size_t     TextMaxSize = 8 * 1024 * 1024; /* Text max search size. */
 };
 
 class SettingsManager

@@ -9,7 +9,8 @@ using LR::SettingsManager;
 namespace LR
 {
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SettingLog, enable, path)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, log, PortableAppSupport, FileNameSupport)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, log, PortableAppSupport, FileNameSupport, TextSupport,
+                                                TextMaxSize)
 } // namespace LR
 
 struct SettingsManager::Data
