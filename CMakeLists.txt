@@ -26,6 +26,7 @@ add_executable(${PROJECT_NAME} WIN32
         src/searchers/Searcher.cpp
         src/searchers/Text.cpp
         src/utils/BoyerMoore.cpp
+        src/utils/DSL.cpp
         src/utils/FileLogger.cpp
         src/utils/FileSystem.cpp
         src/utils/OpenFile.cpp
