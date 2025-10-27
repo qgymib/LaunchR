@@ -89,7 +89,7 @@ FileNameSearcherIter::FileNameSearcherIter(const wxString& query)
 {
     this->query = query.Lower();
 
-    const wxString     search_path = LaunchRApp::GetWorkingDir();
+    const wxString     search_path = wxGetCwd();
     const std::wstring search_path_std = search_path.ToStdWstring();
     pending_paths.push_back(search_path_std);
 

@@ -99,7 +99,7 @@ static void SearchPortableLauncher(PortableAppSearcher::Data* data, const wxStri
 static void SearchPortableApps(PortableAppSearcher::Data* data)
 {
     const wxUniChar sep = wxFileName::GetPathSeparator();
-    const wxString  cwd = LaunchRApp::GetWorkingDir();
+    const wxString  cwd = wxGetCwd();
 
     wxArrayString dirs = GetFirstLevelFolder(cwd);
     for (const wxString& name : dirs)
