@@ -22,6 +22,7 @@ endfunction()
 
 add_executable(${PROJECT_NAME} WIN32
         src/filters/Filter.cpp
+        src/filters/FileName.cpp
         src/filters/Source.cpp
         src/searchers/FileName.cpp
         src/searchers/PortableApps.cpp
