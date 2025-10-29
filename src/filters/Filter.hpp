@@ -1,32 +1,44 @@
 #ifndef LAUNCHR_FILTERS_FILTER_HPP
 #define LAUNCHR_FILTERS_FILTER_HPP
 
-#include <string>
+#include <wx/wx.h>
+#include <wx/string.h>
 #include <optional>
 #include <vector>
 #include <memory>
 #include <functional>
+#include <variant>
 
 namespace LR
 {
 
 struct Filter
 {
-    struct Item
+    enum class Cmd
     {
-        typedef std::vector<uint8_t>  Binary;
-        typedef std::shared_ptr<Item> Ptr;
-
-        bool                  is_eof;   /* End of items. If true, all other fields should be ignored. */
-        std::string           u8_title; /* Item title in UTF-8. */
-        std::string           u8_path;  /* Item path in filesystem, encoding in UTF-8. */
-        std::optional<Binary> content;  /* File content. */
+        Start,
+        End,
     };
-    typedef std::function<void(Item::Ptr item)> Callback;
 
-    Filter(const std::string& u8_query, Callback cb);
+    struct Record
+    {
+        typedef std::vector<uint8_t> Binary;
+
+        wxString                Name;             /* Item name in. */
+        wxString                Path;             /* Item path in filesystem. */
+        uint64_t                Size;             /* File size. */
+        std::optional<uint64_t> CreationTime;     /* Creation time in epoch. */
+        std::optional<uint64_t> ModificationTime; /* Modification time in epoch. */
+        std::optional<Binary>   Content;          /* File content. */
+    };
+
+    typedef std::variant<Cmd, Record>   Msg;
+    typedef std::shared_ptr<Msg>        MsgPtr;
+    typedef std::function<void(MsgPtr)> Callback;
+
+    Filter(const wxString& query, Callback cb);
     virtual ~Filter();
-    virtual void Append(Item::Ptr item);
+    virtual void Handle(MsgPtr msg);
 };
 
 } // namespace LR
